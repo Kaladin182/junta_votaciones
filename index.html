@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CP SANSOFI — Votación</title>
+<style>
+@import url('https://fonts.googleapis.com/css2-family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+:root {
+  --bg:        #f5f5f7;
+  --surface:   #ffffff;
+  --surface2:  #f0f0f2;
+  --surface3:  #e8e8ec;
+  --border:    #e0e0e4;
+  --border2:   #ccccD0;
+  --text:      #0d0d0f;
+  --text2:     #50505a;
+  --text3:     #9090a0;
+
+  --green:     #15803d;
+  --green-dim: #166534;
+  --green-bg:  rgba(21,128,61,0.07);
+  --green-glow:rgba(21,128,61,0.15);
+
+  --red:       #dc2626;
+  --red-dim:   #b91c1c;
+  --red-bg:    rgba(220,38,38,0.07);
+  --red-glow:  rgba(220,38,38,0.15);
+
+  --amber:     #d97706;
+  --amber-dim: #b45309;
+  --amber-bg:  rgba(217,119,6,0.07);
+  --amber-glow:rgba(217,119,6,0.15);
+
+  --blue:      #2563eb;
+  --blue-bg:   rgba(37,99,235,0.07);
+  --blue-border:rgba(37,99,235,0.22);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  padding: 20px 24px 40px;
+}
+
+/* ── HEADER ─────────────────────────────────────────────── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand { display: flex; flex-direction: column; gap: 3px; }
+
+.brand-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text2);
+}
+
+.brand-sub {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+
+.brand-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--text3);
+  margin-top: 1px;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Mode selector pill */
+.mode-wrap { position: relative; }
+
+select#modeSelect {
+  appearance: none;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 8px 36px 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s;
+  min-width: 170px;
+}
+
+.mode-arrow {
+  pointer-events: none;
+  position: absolute;
+  right: 12px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--text3);
+  font-size: 0.6rem;
+}
+
+select#modeSelect.mode-favor     { border-color: var(--green);  color: var(--green);  background: var(--green-bg); }
+select#modeSelect.mode-contra    { border-color: var(--red);    color: var(--red);    background: var(--red-bg); }
+select#modeSelect.mode-abstencion{ border-color: var(--amber);  color: var(--amber);  background: var(--amber-bg); }
+
+.btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.12s;
+  letter-spacing: 0.01em;
+}
+
+.btn:hover { background: var(--surface3); color: var(--text); border-color: var(--border2); }
+
+.btn-emit  { border-color: var(--green-dim); color: var(--green); background: var(--green-bg); }
+.btn-emit:hover  { background: var(--green-glow); }
+
+.btn-reset { border-color: var(--red-dim); color: var(--red); background: var(--red-bg); }
+.btn-reset:hover { background: var(--red-glow); }
+
+/* ── SCOREBOARD ─────────────────────────────────────────── */
+.scoreboard {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.score-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.score-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.score-card.favor   { border-color: rgba(34,197,94,0.3); }
+.score-card.contra  { border-color: rgba(239,68,68,0.3); }
+.score-card.abstencion { border-color: rgba(245,158,11,0.3); }
+
+.score-card.favor::after   { background: var(--green-bg); opacity: 1; }
+.score-card.contra::after  { background: var(--red-bg);   opacity: 1; }
+.score-card.abstencion::after { background: var(--amber-bg); opacity: 1; }
+
+.score-card > * { position: relative; z-index: 1; }
+
+.score-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 6px;
+}
+
+.score-coef {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.9rem;
+  font-weight: 600;
+  line-height: 1;
+  margin-bottom: 4px;
+  letter-spacing: -0.02em;
+}
+
+.score-card.favor .score-coef      { color: var(--green); }
+.score-card.contra .score-coef     { color: var(--red); }
+.score-card.abstencion .score-coef { color: var(--amber); }
+
+.score-units {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--text3);
+}
+
+/* ── RESIDUAL BAR ───────────────────────────────────────── */
+.residual-bar {
+  background: var(--surface);
+  border: 1px solid var(--blue-border);
+  border-radius: 10px;
+  padding: 9px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.residual-pill {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--blue);
+  background: var(--blue-bg);
+  border: 1px solid var(--blue-border);
+  border-radius: 4px;
+  padding: 3px 8px;
+  flex-shrink: 0;
+}
+
+.residual-bar-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--text2);
+}
+
+.residual-bar-text strong { color: var(--blue); }
+
+/* ── GRID ------------------------------------------------- */
+.floors-container { display: flex; flex-direction: column; gap: 4px; }
+
+.floor-row {
+  display: grid;
+  grid-template-columns: 28px repeat(13, 1fr);
+  gap: 4px;
+  align-items: end;
+}
+
+.floor-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--text3);
+  text-align: center;
+  padding-bottom: 6px;
+  font-weight: 600;
+}
+
+/* ── UNIT ------------------------------------------------- */
+.unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  padding-bottom: 2px;
+  transition: transform 0.1s;
+  border-radius: 4px;
+}
+
+.unit:hover  { transform: translateY(-3px); }
+.unit:active { transform: translateY(-1px); }
+
+.house-svg {
+  width: 100%;
+  max-width: 52px;
+  height: auto;
+  transition: filter 0.12s;
+}
+
+.unit:hover .house-svg {
+  filter: drop-shadow(0 4px 10px rgba(255,255,255,0.12));
+}
+
+/* SVG fill transitions */
+.house-roof, .house-walls, .house-door, .house-window {
+  transition: fill 0.15s, stroke 0.15s;
+}
+
+/* Neutral — light grey */
+.unit .house-roof   { fill: #c8c8d0; }
+.unit .house-walls  { fill: #f0f0f4; stroke: #c0c0c8; stroke-width: 1; }
+.unit .house-door   { fill: #a8a8b4; }
+.unit .house-window { fill: #93c5fd; }
+
+/* A FAVOR — green */
+.unit.voted-favor .house-roof   { fill: var(--green-dim); }
+.unit.voted-favor .house-walls  { fill: #dcfce7; stroke: var(--green); stroke-width: 1.5; }
+.unit.voted-favor .house-door   { fill: var(--green-dim); }
+.unit.voted-favor .house-window { fill: #4ade80; }
+
+/* EN CONTRA — red */
+.unit.voted-contra .house-roof   { fill: var(--red-dim); }
+.unit.voted-contra .house-walls  { fill: #fee2e2; stroke: var(--red); stroke-width: 1.5; }
+.unit.voted-contra .house-door   { fill: var(--red-dim); }
+.unit.voted-contra .house-window { fill: #f87171; }
+
+/* ABSTENCION — amber */
+.unit.voted-abstencion .house-roof   { fill: var(--amber-dim); }
+.unit.voted-abstencion .house-walls  { fill: #fef3c7; stroke: var(--amber); stroke-width: 1.5; }
+.unit.voted-abstencion .house-door   { fill: var(--amber-dim); }
+.unit.voted-abstencion .house-window { fill: #fbbf24; }
+
+.unit-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem;
+  color: var(--text3);
+  margin-top: 2px;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+.unit.voted-favor .unit-label      { color: var(--green); }
+.unit.voted-contra .unit-label     { color: var(--red); }
+.unit.voted-abstencion .unit-label { color: var(--amber); }
+
+.unit-coef {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.48rem;
+  color: var(--text3);
+  text-align: center;
+}
+
+.unit.voted-favor .unit-coef      { color: var(--green-dim); }
+.unit.voted-contra .unit-coef     { color: var(--red-dim); }
+.unit.voted-abstencion .unit-coef { color: var(--amber-dim); }
+
+/* ── COMMERCIAL SECTION ─────────────────────────────────── */
+.commercial-section {
+  margin-top: 10px;
+  background: var(--surface);
+  border: 1px dashed var(--border2);
+  border-radius: 10px;
+  padding: 10px 14px 12px;
+}
+
+.commercial-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.commercial-tag {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text3);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 8px;
+}
+
+.commercial-note {
+  font-size: 0.66rem;
+  color: var(--text3);
+  font-family: 'JetBrains Mono', monospace;
+  margin-left: auto;
+}
+
+.commercial-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+/* Commercial SVG parts */
+.bldg-roof, .bldg-walls, .bldg-door, .bldg-window {
+  transition: fill 0.15s, stroke 0.15s;
+}
+
+.unit.commercial .bldg-roof   { fill: #b8b8c4; }
+.unit.commercial .bldg-walls  { fill: #ebebf0; stroke: #c0c0cc; stroke-width: 1; }
+.unit.commercial .bldg-door   { fill: #a0a0b0; }
+.unit.commercial .bldg-window { fill: #93c5fd; }
+
+.unit.commercial.voted-favor .bldg-roof   { fill: var(--green-dim); }
+.unit.commercial.voted-favor .bldg-walls  { fill: #dcfce7; stroke: var(--green); stroke-width: 1.5; }
+.unit.commercial.voted-favor .bldg-door   { fill: var(--green-dim); }
+.unit.commercial.voted-favor .bldg-window { fill: #4ade80; }
+
+.unit.commercial.voted-contra .bldg-roof   { fill: var(--red-dim); }
+.unit.commercial.voted-contra .bldg-walls  { fill: #fee2e2; stroke: var(--red); stroke-width: 1.5; }
+.unit.commercial.voted-contra .bldg-door   { fill: var(--red-dim); }
+.unit.commercial.voted-contra .bldg-window { fill: #f87171; }
+
+.unit.commercial.voted-abstencion .bldg-roof   { fill: var(--amber-dim); }
+.unit.commercial.voted-abstencion .bldg-walls  { fill: #fef3c7; stroke: var(--amber); stroke-width: 1.5; }
+.unit.commercial.voted-abstencion .bldg-door   { fill: var(--amber-dim); }
+.unit.commercial.voted-abstencion .bldg-window { fill: #fbbf24; }
+
+/* ── LEGEND ─────────────────────────────────────────────── */
+.legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.67rem;
+  color: var(--text3);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.legend-dot {
+  width: 8px; height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.legend-dot.favor      { background: var(--green); }
+.legend-dot.contra     { background: var(--red); }
+.legend-dot.abstencion { background: var(--amber); }
+.legend-hint { margin-left: auto; font-size: 0.6rem; color: var(--text3); font-style: italic; }
+
+/* ── FOOTER PROJECTION ──────────────────────────────────── */
+.footer-residual {
+  margin-top: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+
+.footer-title {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 10px;
+}
+
+.residual-verdict {
+  font-size: 0.88rem;
+  font-weight: 600;
+  padding: 11px 16px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border: 1px solid;
+  line-height: 1.45;
+}
+
+.residual-verdict.favor      { color: var(--green); background: var(--green-bg); border-color: rgba(34,197,94,0.25); }
+.residual-verdict.contra     { color: var(--red);   background: var(--red-bg);   border-color: rgba(239,68,68,0.25); }
+.residual-verdict.neutral    { color: var(--text3); background: var(--surface2); border-color: var(--border); }
+
+.residual-breakdown {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.69rem;
+  color: var(--text3);
+  line-height: 1.75;
+}
+
+.residual-breakdown .fav { color: var(--green); font-weight: 600; }
+.residual-breakdown .con { color: var(--red);   font-weight: 600; }
+.residual-breakdown .res { color: var(--blue);  font-weight: 600; }
+
+/* ── TOAST ──────────────────────────────────────────────── */
+.toast {
+  position: fixed; bottom: 20px; right: 20px;
+  background: var(--surface2);
+  border: 1px solid var(--green-dim);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--green);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  transform: translateY(60px);
+  opacity: 0;
+  transition: all 0.22s;
+  z-index: 100;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ── MODALS ─────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.18s;
+}
+.modal-overlay.active { opacity: 1; pointer-events: all; }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  padding: 28px 32px;
+  max-width: 460px; width: 92%;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.20);
+}
+
+.modal h3 {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text2);
+  margin-bottom: 12px;
+}
+
+.modal p  { font-size: 0.82rem; color: var(--text2); line-height: 1.7; margin-bottom: 20px; }
+.modal-buttons { display: flex; gap: 10px; justify-content: center; }
+
+#downloadArea { margin-top: 14px; display: none; }
+
+#downloadLink {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.76rem; font-weight: 600;
+  color: var(--green);
+  background: var(--green-bg);
+  border: 1px solid var(--green-dim);
+  border-radius: 8px;
+  padding: 9px 18px;
+  text-decoration: none;
+  transition: background 0.12s;
+}
+#downloadLink:hover { background: var(--green-glow); }
+
+@media (max-width: 860px) {
+  .floor-row { grid-template-columns: 24px repeat(13, 1fr); gap: 3px; }
+  .unit-label { font-size: 0.48rem; }
+  .unit-coef  { font-size: 0.42rem; }
+  .score-coef { font-size: 1.4rem; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-title">Sistema de votación</div>
+    <div class="brand-sub">CP SANSOFI</div>
+    <div class="brand-count" id="voteCount">Sin votos registrados</div>
+  </div>
+  <div class="controls">
+    <div class="mode-wrap">
+      <select id="modeSelect" onchange="updateMode()">
+        <option value="favor">✔ A FAVOR</option>
+        <option value="contra">✘ EN CONTRA</option>
+        <option value="abstencion">— ABSTENCION</option>
+      </select>
+      <span class="mode-arrow">▼</span>
+    </div>
+    <button class="btn btn-emit" onclick="showEmitModal()">Emitir resultado</button>
+    <button class="btn btn-reset" onclick="showResetModal()">Reiniciar</button>
+  </div>
+</header>
+
+<div class="scoreboard">
+  <div class="score-card favor">
+    <div class="score-label">A Favor</div>
+    <div class="score-coef" id="coefFavor">0,000%</div>
+    <div class="score-units" id="unitsFavor">0 unidades</div>
+  </div>
+  <div class="score-card contra">
+    <div class="score-label">En Contra</div>
+    <div class="score-coef" id="coefContra">0,000%</div>
+    <div class="score-units" id="unitsContra">0 unidades</div>
+  </div>
+  <div class="score-card abstencion">
+    <div class="score-label">Abstencion</div>
+    <div class="score-coef" id="coefAbstencion">0,000%</div>
+    <div class="score-units" id="unitsAbstencion">0 unidades</div>
+  </div>
+</div>
+
+<div class="residual-bar">
+  <span class="residual-pill">Sin voto</span>
+  <span class="residual-bar-text">
+    <strong id="residualUnits">65</strong> viv. · <strong id="residualComUnits">1</strong> local/garaje
+    &nbsp;·&nbsp; Coef. pendiente: <strong id="residualCoef">100,000%</strong>
+  </span>
+</div>
+
+<div class="floors-container" id="floorsContainer"></div>
+
+<div class="commercial-section">
+  <div class="commercial-header">
+    <span class="commercial-tag">Locales y garajes</span>
+    <span class="commercial-note">6,13% total · clicable</span>
+  </div>
+  <div class="commercial-grid" id="commercialGrid"></div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><span class="legend-dot favor"></span>A favor</div>
+  <div class="legend-item"><span class="legend-dot contra"></span>En contra</div>
+  <div class="legend-item"><span class="legend-dot abstencion"></span>Abstencion</div>
+  <span class="legend-hint">Pulsar unidad ya votada → desmarcar</span>
+</div>
+
+<div class="footer-residual">
+  <div class="footer-title">Proyeccion con voto residual · Art. 17.8 LPH</div>
+  <div class="residual-verdict neutral" id="residualVerdict">
+    Sin votos a favor ni en contra - la proyeccion aparecera aqui.
+  </div>
+  <div class="residual-breakdown" id="residualBreakdown"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="emitModal">
+  <div class="modal">
+    <h3>Emitir Resultado</h3>
+    <p id="emitSummary"></p>
+    <div class="modal-buttons">
+      <button class="btn" onclick="closeModal('emitModal')">Cancelar</button>
+      <button class="btn btn-emit" onclick="buildDownload()">Preparar descarga</button>
+    </div>
+    <div id="downloadArea">
+      <a id="downloadLink" href="#" download="votacion.txt">Descargar resultado .txt</a>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="resetModal">
+  <div class="modal">
+    <h3>Reiniciar Votacion</h3>
+    <p>Se borraran todos los votos. Esta accion no se puede deshacer.</p>
+    <div class="modal-buttons">
+      <button class="btn" onclick="closeModal('resetModal')">Cancelar</button>
+      <button class="btn btn-reset" onclick="resetVotes()">Reiniciar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// --- DATOS ------------------------------------------------
+const COEFICIENTES = {
+  "1A":1.18,"1B":1.40,"1C":1.59,"1D":1.23,"1E":0.75,"1F":1.26,"1G":1.31,
+  "1H":1.30,"1I":1.27,"1J":1.20,"1K":1.60,"1L":1.40,"1M":1.27,
+  "2A":1.26,"2B":1.52,"2C":1.66,"2D":1.20,"2E":0.75,"2F":1.22,"2G":1.28,
+  "2H":1.29,"2I":1.24,"2J":1.18,"2K":1.80,"2L":1.49,"2M":1.35,
+  "3A":1.29,"3B":1.50,"3C":1.58,"3D":1.20,"3E":0.76,"3F":1.28,"3G":1.22,
+  "3H":1.25,"3I":1.21,"3J":1.18,"3K":1.62,"3L":1.47,"3M":1.35,
+  "4A":1.27,"4B":1.48,"4C":1.62,"4D":1.16,"4E":0.75,"4F":1.28,"4G":1.25,
+  "4H":1.27,"4I":1.40,"4J":1.19,"4K":1.98,"4L":1.48,"4M":1.34,
+  "5A":1.96,"5B":2.22,"5C":2.36,"5D":1.77,"5E":1.01,"5F":1.92,"5G":1.94,
+  "5H":1.98,"5I":1.96,"5J":1.45,"5K":2.42,"5L":2.44,"5M":2.25
+};
+
+// Un bloque. Cuando tengas el detalle real, ampliar con entradas individuales.
+const COMERCIAL = {"LOCAL-1": 3.13, "LOCAL-2": 2.34, "G-68": 0.25, "G-72": 0.22};
+
+const LETRAS = ['A','B','C','D','E','F','G','H','I','J','K','L','M'];
+const votes  = {};
+
+// --- SVG: CASITA ------------------------------------------
+function houseSVG() {
+  return `<svg class="house-svg" viewBox="0 0 60 58" xmlns="http://www.w3.org/2000/svg">
+    <polygon class="house-roof" points="30,4 58,26 2,26"/>
+    <rect class="house-walls" x="8" y="25" width="44" height="30" rx="1"/>
+    <rect class="house-door"  x="23" y="38" width="14" height="17" rx="2"/>
+    <rect class="house-window" x="11" y="32" width="9" height="8" rx="1"/>
+    <rect class="house-window" x="40" y="32" width="9" height="8" rx="1"/>
+    <circle fill="rgba(255,255,255,0.15)" cx="34" cy="47" r="1.3"/>
+  </svg>`;
+}
+
+// --- SVG: EDIFICIO COMERCIAL ------------------------------
+function commercialSVG() {
+  return `<svg class="house-svg" viewBox="0 0 50 54" xmlns="http://www.w3.org/2000/svg">
+    <rect class="bldg-roof"  x="1" y="3"  width="48" height="6" rx="1"/>
+    <rect class="bldg-walls" x="1" y="8"  width="48" height="43" rx="1"/>
+    <rect class="bldg-window" x="4"  y="34" width="42" height="17"/>
+    <rect class="bldg-door"   x="18" y="39" width="14" height="12"/>
+    <rect class="bldg-window" x="5"  y="14" width="10" height="8" rx="1"/>
+    <rect class="bldg-window" x="20" y="14" width="10" height="8" rx="1"/>
+    <rect class="bldg-window" x="35" y="14" width="10" height="8" rx="1"/>
+    <rect class="bldg-window" x="5"  y="25" width="10" height="7" rx="1"/>
+    <rect class="bldg-window" x="20" y="25" width="10" height="7" rx="1"/>
+    <rect class="bldg-window" x="35" y="25" width="10" height="7" rx="1"/>
+  </svg>`;
+}
+
+// --- GRID -------------------------------------------------
+function buildGrid() {
+  const container = document.getElementById('floorsContainer');
+  for (let p = 5; p >= 1; p--) {
+    const row = document.createElement('div');
+    row.className = 'floor-row';
+    const lbl = document.createElement('div');
+    lbl.className = 'floor-label';
+    lbl.textContent = `P${p}`;
+    row.appendChild(lbl);
+    for (const l of LETRAS) {
+      const key = `${p}${l}`;
+      votes[key] = null;
+      const u = document.createElement('div');
+      u.className = 'unit';
+      u.id = `unit-${key}`;
+      u.onclick = () => toggleVote(key);
+      u.innerHTML = `${houseSVG()}<div class="unit-label">${key}</div><div class="unit-coef">${COEFICIENTES[key].toFixed(2)}%</div>`;
+      row.appendChild(u);
+    }
+    container.appendChild(row);
+  }
+}
+
+function buildCommercial() {
+  const grid = document.getElementById('commercialGrid');
+  for (const [key, coef] of Object.entries(COMERCIAL)) {
+    votes[key] = null;
+    const u = document.createElement('div');
+    u.className = 'unit commercial';
+    u.id = `unit-${key}`;
+    u.onclick = () => toggleVote(key);
+    u.innerHTML = `${commercialSVG()}<div class="unit-label">${key}</div><div class="unit-coef">${coef.toFixed(3)}%</div>`;
+    grid.appendChild(u);
+  }
+}
+
+// --- VOTO -------------------------------------------------
+function isCom(key) { return key in COMERCIAL; }
+
+function toggleVote(key) {
+  const mode = document.getElementById('modeSelect').value;
+  votes[key] = (votes[key] === mode) ? null : mode;
+  const u = document.getElementById(`unit-${key}`);
+  u.className = (isCom(key) ? 'unit commercial' : 'unit') + (votes[key] ? ` voted-${votes[key]}` : '');
+  updateAll();
+}
+
+// --- CALCULO ----------------------------------------------
+function calcTotals() {
+  let tf=0, tc=0, ta=0, cf=0, cc=0, ca=0;
+  const detF=[], detC=[], detA=[], detSinViv=[], detSinCom=[];
+  for (const [key, state] of Object.entries(votes)) {
+    const c = isCom(key) ? COMERCIAL[key] : COEFICIENTES[key];
+    if      (state==='favor')      { tf+=c; cf++; detF.push([key,c]); }
+    else if (state==='contra')     { tc+=c; cc++; detC.push([key,c]); }
+    else if (state==='abstencion') { ta+=c; ca++; detA.push([key,c]); }
+    else { isCom(key) ? detSinCom.push([key,c]) : detSinViv.push([key,c]); }
+  }
+  const rViv   = parseFloat(detSinViv.reduce((s,[,v])=>s+v,0).toFixed(3));
+  const rCom   = parseFloat(detSinCom.reduce((s,[,v])=>s+v,0).toFixed(3));
+  const rTotal = parseFloat((rViv+rCom).toFixed(3));
+  return {tf,tc,ta,cf,cc,ca,detF,detC,detA,detSinViv,detSinCom,rViv,rCom,rTotal};
+}
+
+function fmt(n)  { return n.toFixed(3).replace('.',','); }
+function fmtU(n) { return `${n} unidad${n!==1?'es':''}`; }
+
+// --- UPDATE -----------------------------------------------
+function updateAll() {
+  const {tf,tc,ta,cf,cc,ca,detSinViv,detSinCom,rViv,rCom,rTotal} = calcTotals();
+  document.getElementById('coefFavor').textContent      = fmt(tf)+'%';
+  document.getElementById('coefContra').textContent     = fmt(tc)+'%';
+  document.getElementById('coefAbstencion').textContent = fmt(ta)+'%';
+  document.getElementById('unitsFavor').textContent     = fmtU(cf);
+  document.getElementById('unitsContra').textContent    = fmtU(cc);
+  document.getElementById('unitsAbstencion').textContent= fmtU(ca);
+  document.getElementById('residualUnits').textContent   = detSinViv.length;
+  document.getElementById('residualComUnits').textContent= detSinCom.length;
+  document.getElementById('residualCoef').textContent    = fmt(rTotal)+'%';
+  const tot = Object.values(votes).filter(v=>v!==null).length;
+  document.getElementById('voteCount').textContent =
+    tot===0 ? 'Sin votos registrados'
+            : `${tot} voto${tot!==1?'s':''} registrado${tot!==1?'s':''}`;
+  updateFooter(tf,tc,ta,rViv,rCom,rTotal,cf,cc,detSinViv.length,detSinCom.length);
+}
+
+function updateFooter(tf,tc,ta,rViv,rCom,rTotal,cf,cc,sinVN,sinCN) {
+  const verd = document.getElementById('residualVerdict');
+  const brkd = document.getElementById('residualBreakdown');
+  if (cf===0 && cc===0) {
+    verd.className='residual-verdict neutral';
+    verd.innerHTML='Sin votos a favor ni en contra - la proyeccion aparecera aqui.';
+    brkd.innerHTML=''; return;
+  }
+  const tfP = tf>=tc ? tf+rTotal : tf;
+  const tcP = tc>tf  ? tc+rTotal : tc;
+  const win = tfP>tcP ? 'favor' : tcP>tfP ? 'contra' : 'empate';
+  if (win==='favor') {
+    verd.className='residual-verdict favor';
+    verd.innerHTML=`A FAVOR - Con el voto residual, <strong>A FAVOR</strong> alcanzaria <strong>${fmt(tfP)}%</strong> del coeficiente total.`;
+  } else if (win==='contra') {
+    verd.className='residual-verdict contra';
+    verd.innerHTML=`EN CONTRA - Con el voto residual, <strong>EN CONTRA</strong> alcanzaria <strong>${fmt(tcP)}%</strong> del coeficiente total.`;
+  } else {
+    verd.className='residual-verdict neutral';
+    verd.innerHTML='Empate exacto incluso sumando el voto residual completo.';
+  }
+  brkd.innerHTML=
+    `Emitidos: <span class="fav">favor ${fmt(tf)}%</span> (${cf}) / <span class="con">contra ${fmt(tc)}%</span> (${cc}) / abstencion ${fmt(ta)}%<br>`+
+    `Residual: <span class="res">viviendas ${fmt(rViv)}%</span> (${sinVN}) + <span class="res">loc/gar ${fmt(rCom)}%</span> (${sinCN}) = <span class="res">${fmt(rTotal)}% total</span><br>`+
+    `<span style="font-size:.64rem;color:var(--text3)">Art. 17.8 LPH - Los ausentes que no impugnen en 30 dias desde la notificacion quedan vinculados por el acuerdo.</span>`;
+}
+
+// --- EMITIR -----------------------------------------------
+function showEmitModal() {
+  const {tf,tc,ta,cf,cc,ca,detSinViv,detSinCom,rViv,rCom,rTotal}=calcTotals();
+  document.getElementById('emitSummary').innerHTML=
+    `<strong style="color:var(--green)">A favor: ${fmt(tf)}%</strong> (${cf}) &nbsp;/&nbsp;
+     <strong style="color:var(--red)">En contra: ${fmt(tc)}%</strong> (${cc}) &nbsp;/&nbsp;
+     <strong style="color:var(--amber)">Abstencion: ${fmt(ta)}%</strong> (${ca})<br><br>
+     <span style="color:var(--blue)">Residual viv.: ${fmt(rViv)}% (${detSinViv.length}) / loc/gar: ${fmt(rCom)}% (${detSinCom.length})</span><br>
+     <span style="color:var(--blue)"><strong>Total residual: ${fmt(rTotal)}%</strong></span>`;
+  document.getElementById('downloadArea').style.display='none';
+  document.getElementById('emitModal').classList.add('active');
+}
+
+function buildDownload() {
+  const now=new Date();
+  const {tf,tc,ta,cf,cc,ca,detF,detC,detA,detSinViv,detSinCom,rViv,rCom,rTotal}=calcTotals();
+  const gan=tf>=tc?'A FAVOR':'EN CONTRA';
+  const tfP=tf>=tc?tf+rTotal:tf, tcP=tc>tf?tc+rTotal:tc;
+  const fl=([k,v])=>`  ${k.padEnd(6)}  ${v.toFixed(3).replace('.',',')}%`;
+  const lines=[
+    `COMUNIDAD DE PROPIETARIOS SANSOFI`,
+    `RESULTADO DE VOTACION`,
+    `Fecha y hora: ${now.toLocaleString('es-ES')}`,``,
+    `===================================================`,
+    `  A FAVOR          ${fmt(tf).padStart(9)}%   (${cf} unidades)`,
+    `  EN CONTRA        ${fmt(tc).padStart(9)}%   (${cc} unidades)`,
+    `  ABSTENCION       ${fmt(ta).padStart(9)}%   (${ca} unidades)`,
+    `  -------------------------------------------------`,
+    `  Total emitido    ${fmt(tf+tc+ta).padStart(9)}%   (${cf+cc+ca} unidades)`,``,
+    `  VOTO RESIDUAL (suma a la mayoria - art. 17.8 LPH):`,
+    `  Viviendas ausentes    ${fmt(rViv).padStart(9)}%   (${detSinViv.length})`,
+    `  Locales/garajes s/v   ${fmt(rCom).padStart(9)}%   (${detSinCom.length})`,
+    `  Total residual        ${fmt(rTotal).padStart(9)}%`,``,
+    `PROYECCION CON VOTO RESIDUAL COMPLETO:`,
+    `  Opcion con mas votos : ${gan}`,
+    `  A favor   (proyectado): ${fmt(tfP)}%`,
+    `  En contra (proyectado): ${fmt(tcP)}%`,
+    `  Los ausentes que no impugnen en 30 dias desde la`,
+    `  notificacion quedan vinculados (art. 17.8 LPH).`,
+    `===================================================`,``,
+    `DETALLE A FAVOR (${cf}):`,      ...(detF.length?detF.map(fl):['  -']),``,
+    `DETALLE EN CONTRA (${cc}):`,    ...(detC.length?detC.map(fl):['  -']),``,
+    `DETALLE ABSTENCION (${ca}):`,   ...(detA.length?detA.map(fl):['  -']),``,
+    `VIVIENDAS AUSENTES (${detSinViv.length}):`,
+    `  ${detSinViv.length?detSinViv.map(([k])=>k).join(', '):'-'}`,``,
+    `LOCALES/GARAJES SIN VOTO (${detSinCom.length}):`,
+    `  ${detSinCom.length?detSinCom.map(([k])=>k).join(', '):'-'}`,``,
+    `===================================================`,
+  ].join('\n');
+  const ts=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+  const link=document.getElementById('downloadLink');
+  const blob = new Blob([lines], {type: 'text/plain;charset=utf-8'});
+  if (link._blobUrl) URL.revokeObjectURL(link._blobUrl);
+  link._blobUrl = URL.createObjectURL(blob);
+  link.href = link._blobUrl;
+  link.download=`votacion_SANSOFI_${ts}.txt`;
+  link.textContent=`Descargar votacion_SANSOFI_${ts}.txt`;
+  document.getElementById('downloadArea').style.display='block';
+}
+
+// --- RESET ------------------------------------------------
+function showResetModal(){ document.getElementById('resetModal').classList.add('active'); }
+
+function resetVotes() {
+  for (const key of Object.keys(votes)) {
+    votes[key]=null;
+    document.getElementById(`unit-${key}`).className = isCom(key)?'unit commercial':'unit';
+  }
+  updateAll(); closeModal('resetModal'); showToast('Votacion reiniciada OK');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('active');
+  if(id==='emitModal') document.getElementById('downloadArea').style.display='none';
+}
+
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+function updateMode() {
+  document.getElementById('modeSelect').className=`mode-${document.getElementById('modeSelect').value}`;
+}
+
+// --- INIT -------------------------------------------------
+buildGrid(); buildCommercial(); updateMode(); updateAll();
+</script>
+</body>
+</html>
