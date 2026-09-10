@@ -749,11 +749,39 @@ function buildCommercial() {
 // --- VOTO -------------------------------------------------
 function isCom(key) { return key in COMERCIAL; }
 
+// --- PERSISTENCIA (localStorage: sobrevive recargas y cortes de red) ---
+const STORAGE_KEY = 'sansofi_votes_v1';
+
+function saveVotes() {
+  try {
+    const data = {};
+    for (const [k, v] of Object.entries(votes)) if (v) data[k] = v;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) { /* almacenamiento no disponible: la app sigue funcionando en memoria */ }
+}
+
+function loadVotes() {
+  try {
+    const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    let n = 0;
+    for (const [k, v] of Object.entries(data)) {
+      if (k in votes && ['favor','contra','abstencion'].includes(v)) {
+        votes[k] = v;
+        const u = document.getElementById(`unit-${k}`);
+        if (u) u.className = (isCom(k) ? 'unit commercial' : 'unit') + ` voted-${v}`;
+        n++;
+      }
+    }
+    if (n > 0) showToast(`${n} voto${n!==1?'s':''} recuperado${n!==1?'s':''} de la sesion anterior`);
+  } catch (e) { /* datos corruptos o almacenamiento no disponible: se ignora */ }
+}
+
 function toggleVote(key) {
   const mode = document.getElementById('modeSelect').value;
   votes[key] = (votes[key] === mode) ? null : mode;
   const u = document.getElementById(`unit-${key}`);
   u.className = (isCom(key) ? 'unit commercial' : 'unit') + (votes[key] ? ` voted-${votes[key]}` : '');
+  saveVotes();
   updateAll();
 }
 
@@ -891,7 +919,7 @@ function resetVotes() {
     votes[key]=null;
     document.getElementById(`unit-${key}`).className = isCom(key)?'unit commercial':'unit';
   }
-  updateAll(); closeModal('resetModal'); showToast('Votacion reiniciada OK');
+  saveVotes(); updateAll(); closeModal('resetModal'); showToast('Votacion reiniciada OK');
 }
 
 function closeModal(id) {
@@ -910,7 +938,7 @@ function updateMode() {
 }
 
 // --- INIT -------------------------------------------------
-buildGrid(); buildCommercial(); updateMode(); updateAll();
+buildGrid(); buildCommercial(); loadVotes(); updateMode(); updateAll();
 </script>
 </body>
 </html>
